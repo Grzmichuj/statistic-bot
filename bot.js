@@ -64,7 +64,7 @@ async function updateServerStatusMessage() {
                 return a.name.localeCompare(b.name);
             });
 
-            const maxPlayersToShow = 33;
+            const maxPlayersToShow = 32;
             const playersToShow = sortedPlayers.slice(0, maxPlayersToShow);
 
             playersToShow.forEach(p => {
