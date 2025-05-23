@@ -39,7 +39,7 @@ async function updateServerStatusMessage() {
             type: 'cs16',
             host: SERVER_IP,
             port: SERVER_PORT,
-            timeout: 5000 // Czas oczekiwania na odpowiedź serwera (5 sekund)
+            timeout: 15000 // Czas oczekiwania na odpowiedź serwera (5 sekund)
         });
 
         let playerListContent = '';
