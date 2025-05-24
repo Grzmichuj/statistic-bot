@@ -73,65 +73,69 @@ async function updateServerStatusMessage() {
                 let playerStats = [];
 
                 if (p.score !== undefined) {
-                    playerStats.push(`K: ${p.score}`); // Tutaj były brakujące backticki
+                    playerStats.push(`K: ${p.score}`);
                 }
 
                 if (p.time !== undefined) {
                     const totalSeconds = Math.floor(p.time);
-
                     let timeString;
 
                     if (totalSeconds < 60) {
-                        timeString = `${totalSeconds}s`; // Tutaj były brakujące backticki
+                        timeString = `${totalSeconds}s`;
                     } else {
                         const hours = Math.floor(totalSeconds / 3600);
                         const minutes = Math.floor((totalSeconds % 3600) / 60);
                         const seconds = totalSeconds % 60;
-
                         let parts = [];
 
                         if (hours > 0) {
-                            parts.push(`${hours}h`); // Tutaj były brakujące backticki
+                            parts.push(`${hours}h`);
                         }
-                        
                         if (minutes > 0 || hours > 0) {
-                            parts.push(`${minutes}m`); // Tutaj były brakujące backticki
+                            parts.push(`${minutes}m`);
                         }
-
                         if (seconds > 0 || (hours > 0 || minutes > 0)) {
-                            parts.push(`${seconds}s`); // Tutaj były brakujące backticki
+                            parts.push(`${seconds}s`);
                         }
-                        
                         timeString = parts.join(' ');
                     }
-                    playerStats.push(`Czas: ${timeString}`); // Tutaj były brakujące backticki
+                    playerStats.push(`Czas: ${timeString}`);
                 }
 
                 if (playerStats.length > 0) {
-                    playerListContent += `• ${playerName} **(${playerStats.join(' | ')})**\n`; // Tutaj były brakujące backticki
+                    playerListContent += `• ${playerName} **(${playerStats.join(' | ')})**\n`;
                 } else {
-                    playerListContent += `• ${playerName}\n`; // Tutaj były brakujące backticki
+                    playerListContent += `• ${playerName}\n`;
                 }
             });
 
-            if (serverInfo.players.length > maxPlayersToShow) {
-                playerListContent += `\n(+${serverInfo.players.length - maxPlayersToShow} więcej...)\n`; // Tutaj były brakujące backticki
+            // DZIELENIE NA KILKA PÓL, ABY NIE PRZEKROCZYĆ LIMITU 1024 ZNAKÓW
+            const MAX_FIELD_LENGTH = 1024;
+            const lines = playerListContent.trim().split('\n');
+            let chunk = '';
+            let part = 1;
+            for (const line of lines) {
+                if ((chunk + '\n' + line).length > MAX_FIELD_LENGTH) {
+                    embed.addFields({ name: `Gracze Online (cz. ${part})`, value: chunk, inline: false });
+                    part++;
+                    chunk = line;
+                } else {
+                    chunk += (chunk ? '\n' : '') + line;
+                }
             }
-
-            embed.addFields(
-                { name: '**Gracze Online:**', value: playerListContent, inline: false } // Zmieniłem * na ** dla pogrubienia
-            );
-
+            if (chunk) {
+                embed.addFields({ name: `Gracze Online (cz. ${part})`, value: chunk, inline: false });
+            }
         } else {
             embed.addFields(
-                { name: '**Gracze Online:**', value: 'Brak graczy online.', inline: false } // Zmieniłem * na ** dla pogrubienia
+                { name: '**Gracze Online:**', value: 'Brak graczy online.', inline: false }
             );
         }
 
         embed.addFields(
             {
                 name: '\u200b',
-                value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`, // Tutaj były brakujące backticki
+                value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`,
                 inline: false
             }
         );
@@ -141,30 +145,28 @@ async function updateServerStatusMessage() {
 
     } catch (error) {
         console.error('❌ Wystąpił błąd podczas pobierania informacji o serwerze CS 1.6:', error.message);
-        // Dodaj więcej szczegółów z obiektu błędu
         if (error.errors && Array.isArray(error.errors)) {
             error.errors.forEach((err, index) => {
-                console.error(`  Błąd ${index + 1}: Typ - ${err.type}, Wiadomość - ${err.message}`); // Tutaj były brakujące backticki
-                if (err.stack) {
-                    console.error(`  Stos: ${err.stack}`); // Tutaj były brakujące backticki
-                }
+                console.error(`  Błąd ${index + 1}: Typ - ${err.type}, Wiadomość - ${err.message}`);
+                if (err.stack) console.error(`  Stos: ${err.stack}`);
             });
         } else if (error.stack) {
-            console.error(`  Stos: ${error.stack}`); // Tutaj były brakujące backticki
+            console.error(`  Stos: ${error.stack}`);
         }
-        // Tworzymy embed dla statusu offline/błędu
+
+        // Embed offline/error
         const errorEmbed = new EmbedBuilder()
             .setTitle('Status Serwera Counter-Strike 1.6')
-            .setColor(0xFF0000) // Kolor czerwony dla statusu offline
+            .setColor(0xFF0000)
             .setDescription(
-                `🔴 **Status:** Offline lub brak odpowiedzi\n` + // Tutaj były brakujące backticki i operator +
-                `🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n\n` + // Tutaj były brakujące backticki i operator +
-                `_Błąd: ${error.message}_` // Tutaj były brakujące backticki
+                `🔴 **Status:** Offline lub brak odpowiedzi\n` +
+                `🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n\n` +
+                `_Błąd: ${error.message}_`
             )
             .addFields(
                 {
                     name: '\u200b',
-                    value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`, // Tutaj były brakujące backticki
+                    value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`,
                     inline: false
                 }
             );
@@ -178,60 +180,42 @@ client.once('ready', async () => {
     console.log(`✅ Bot zalogowany jako ${client.user.tag}!`);
     console.log(`Bot będzie automatycznie aktualizować wiadomość statusu co ${UPDATE_INTERVAL_MINUTES} minuty.`);
 
-    // WALIDACJA ZMIENNYCH ŚRODOWISKOWYCH:
     if (!TOKEN || !SERVER_IP || isNaN(SERVER_PORT) || !STATUS_CHANNEL_ID || isNaN(UPDATE_INTERVAL_MINUTES)) {
-        console.error('BŁĄD: Brakuje lub są nieprawidłowe wymagane zmienne środowiskowe (.env). Upewnij się, że plik .env zawiera DISCORD_TOKEN, CS16_SERVER_IP, CS16_SERVER_PORT, STATUS_CHANNEL_ID i UPDATE_INTERVAL_MINUTES.');
+        console.error('BŁĄD: Brakuje lub są nieprawidłowe wymagane zmienne środowiskowe (.env).');
         process.exit(1);
     }
 
-    // --- ROZWIĄZANIE PROBLEMU Z HOSTINGIEM ---
+    // Prosty serwer webowy do hostingu
     const HOSTING_PORT = process.env.PORT || 3000;
     const hostingWebServer = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'text/plain' });
         res.end('Bot Discord dziala i jest zdrowy.\n');
     });
     hostingWebServer.listen(HOSTING_PORT, () => {
-        console.log(`Prosty serwer webowy (do kontroli hostingu) nasłuchuje na porcie ${HOSTING_PORT}`);
-        console.log('Ten serwer służy wyłącznie do sprawdzania stanu przez platformę hostingową. Funkcjonalność bota Discord NIE jest od niego zależna.');
+        console.log(`Prosty serwer webowy nasłuchuje na porcie ${HOSTING_PORT}`);
     });
-    // --- KONIEC KODU ROZWIĄZUJĄCEGO PROBLEM Z HOSTINGIEM ---
-
 
     const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
-
     if (!channel || !(channel instanceof TextChannel)) {
-        console.error(`BŁĄD: Nie można znaleźć kanału o ID: ${STATUS_CHANNEL_ID} lub nie jest to kanał tekstowy.`);
+        console.error(`BŁĄD: Nie można znaleźć kanału o ID: ${STATUS_CHANNEL_ID}.`);
         return;
     }
 
-    // ***** LOGIKA: Szukanie i aktualizowanie istniejącej wiadomości *****
     if (PREVIOUS_STATUS_MESSAGE_ID) {
         try {
-            const fetchedMessage = await channel.messages.fetch(PREVIOUS_STATUS_MESSAGE_ID);
-            statusMessage = fetchedMessage;
-            console.log(`Znaleziono poprzednią wiadomość statusu o ID: ${PREVIOUS_STATUS_MESSAGE_ID}. Będę ją aktualizować.`);
+            statusMessage = await channel.messages.fetch(PREVIOUS_STATUS_MESSAGE_ID);
+            console.log(`Znaleziono poprzednią wiadomość statusu o ID: ${PREVIOUS_STATUS_MESSAGE_ID}.`);
         } catch (error) {
-            console.warn(`⚠️ Nie udało się znaleźć lub odczytać poprzedniej wiadomości o ID: ${PREVIOUS_STATUS_MESSAGE_ID}. Możliwe, że została usunięta lub ID jest błędne. Wysyłam nową wiadomość.`);
-            // Wysyłamy nową wiadomość (jako embed)
-            statusMessage = await channel.send({
-                embeds: [new EmbedBuilder().setDescription('Inicjuję automatyczny status serwera...').setColor(0xFFA500)]
-            });
-            console.log(`Wysłano nową wiadomość statusu o ID: ${statusMessage.id}. PROSZĘ ZAKTUALIZOWAĆ LUB DODAĆ ZMIENNĄ PREVIOUS_STATUS_MESSAGE_ID W PLIKU .env I USTAWIĆ JĄ NA: ${statusMessage.id}`);
+            console.warn('⚠️ Nie znaleziono wiadomości. Wysyłam nową.');
+            statusMessage = await channel.send({ embeds: [new EmbedBuilder().setDescription('Inicjuję automatyczny status serwera...').setColor(0xFFA500)] });
+            console.log(`Zaktualizuj PREVIOUS_STATUS_MESSAGE_ID na: ${statusMessage.id}`);
         }
     } else {
-        // Wysyłamy początkową wiadomość (jako embed)
-        statusMessage = await channel.send({
-            embeds: [new EmbedBuilder().setDescription('Inicjuję automatyczny status serwera...').setColor(0xFFA500)]
-        });
-        console.log(`Wysłano początkową wiadomość statusu w kanale ${channel.name} (ID: ${statusMessage.id}). ABY ZAPOBIEGAĆ WYSYŁANIU NOWYCH WIADOMOŚCI PO RESTARCIE, PROSZĘ DODAĆ ZMIENNĄ PREVIOUS_STATUS_MESSAGE_ID W PLIKU .env I USTAWIĆ JĄ NA: ${statusMessage.id}`);
+        statusMessage = await channel.send({ embeds: [new EmbedBuilder().setDescription('Inicjuję automatyczny status serwera...').setColor(0xFFA500)] });
+        console.log(`Zaktualizuj PREVIOUS_STATUS_MESSAGE_ID na: ${statusMessage.id}`);
     }
-    // ***** KONIEC LOGIKI *****
 
-
-    // Natychmiastowa pierwsza aktualizacja
     await updateServerStatusMessage();
-
-    // Ustaw interwał dla regularnych aktualizacji
     setInterval(updateServerStatusMessage, UPDATE_INTERVAL_MINUTES * 60 * 1000);
 });
 
