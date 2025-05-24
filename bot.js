@@ -4,7 +4,7 @@ const http = require('http');
 // DODAJ EmbedBuilder do importu z discord.js
 const { Client, GatewayIntentBits, TextChannel, EmbedBuilder } = require('discord.js');
 const Gamedig = require('gamedig');
-require('dotenv').config(); // Wczytaj zmienne środowiskowe z pliku .env
+require('dotenv').config(); // Wczytaj zmienne środowiskowe
 
 // Pobierz zmienne środowiskowe
 const TOKEN = process.env.DISCORD_TOKEN;
@@ -17,16 +17,46 @@ const PREVIOUS_STATUS_MESSAGE_ID = process.env.PREVIOUS_STATUS_MESSAGE_ID;
 let statusMessage = null;
 
 const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages],
+    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
 });
 
 async function updateServerStatusMessage() {
-    if (!statusMessage) return console.error('❌ Wiadomość statusu nie została zainicjowana.');
-
+    if (!statusMessage) return console.error('❌ Status message not initialized.');
     try {
-        const serverInfo = await Gamedig.query({ type: 'cs16', host: SERVER_IP, port: SERVER_PORT, timeout: 20000, debug: true });
+        const serverInfo = await Gamedig.query({ type: 'cs16', host: SERVER_IP, port: SERVER_PORT, timeout: 20000 });
+        // Budowanie listy graczy
         let playerListContent = '';
+        if (serverInfo.players && serverInfo.players.length > 0) {
+            const sorted = serverInfo.players.sort((a, b) => {
+                if (a.score != null && b.score != null) return b.score - a.score;
+                return a.name.localeCompare(b.name);
+            }).slice(0, 32);
+            sorted.forEach(p => {
+                let stats = [];
+                if (p.score != null) stats.push(`K: ${p.score}`);
+                if (p.time != null) {
+                    const s = Math.floor(p.time);
+                    if (s < 60) stats.push(`${s}s`);
+                    else {
+                        const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+                        let parts = [];
+                        if (h) parts.push(`${h}h`);
+                        if (m || h) parts.push(`${m}m`);
+                        if (sec || m || h) parts.push(`${sec}s`);
+                        stats.push(`Czas: ${parts.join(' ')}`);
+                    }
+                }
+                playerListContent += `• ${p.name}${stats.length ? ` **(${stats.join(' | ')})**` : ''}\n`;
+            });
+            if (serverInfo.players.length > 32) {
+                const more = serverInfo.players.length - 32;
+                playerListContent += `...(+${more} więcej)\n`;
+            }
+        } else {
+            playerListContent = 'Brak graczy online.';
+        }
 
+        // Tworzymy embed z całą listą w opisie
         const embed = new EmbedBuilder()
             .setTitle('ZOMBIE+EXP 100 LVL by MCk199')
             .setColor(0x0099FF)
@@ -34,80 +64,41 @@ async function updateServerStatusMessage() {
                 `⭐ **Nazwa:** ${serverInfo.name}\n` +
                 `🗺️ **Mapa:** ${serverInfo.map}\n` +
                 `👥 **Gracze:** ${serverInfo.players.length}/${serverInfo.maxplayers}\n` +
-                `🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n`
-            );
-
-        if (serverInfo.players && serverInfo.players.length > 0) {
-            const sortedPlayers = serverInfo.players.sort((a, b) => (
-                a.score !== undefined && b.score !== undefined ? b.score - a.score : a.name.localeCompare(b.name)
-            ));
-            const maxPlayersToShow = 32;
-            const playersToShow = sortedPlayers.slice(0, maxPlayersToShow);
-
-            playersToShow.forEach(p => {
-                let stats = [];
-                if (p.score !== undefined) stats.push(`K: ${p.score}`);
-                if (p.time !== undefined) {
-                    const s = Math.floor(p.time);
-                    if (s < 60) stats.push(`${s}s`);
-                    else {
-                        const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
-                        const parts = [];
-                        if (h) parts.push(`${h}h`);
-                        if (m || h) parts.push(`${m}m`);
-                        if (sec || m || h) parts.push(`${sec}s`);
-                        stats.push(`Czas: ${parts.join(' ')}`);
-                    }
-                }
-                playerListContent += stats.length ? `• ${p.name} **(${stats.join(' | ')})**\n` : `• ${p.name}\n`;
+                `🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n\n` +
+                `**Gracze Online:**\n${playerListContent}`
+            )
+            .addFields({
+                name: '\u200b',
+                value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false, timeZone:'Europe/Warsaw'})}`
             });
 
-            // Podział na pola bez wizualnego oddzielenia
-            const lines = playerListContent.trim().split('\n');
-            const MAX_FIELD_LEN = 1024;
-            let chunk = '';
-            let part = 1;
-            for (const line of lines) {
-                if ((chunk + '\n' + line).length > MAX_FIELD_LEN) {
-                    embed.addFields({
-                        name: part === 1 ? '**Gracze Online:**' : '\u200b',
-                        value: chunk,
-                        inline: false
-                    });
-                    part++;
-                    chunk = line;
-                } else chunk += (chunk ? '\n' : '') + line;
-            }
-            if (chunk) embed.addFields({ name: part === 1 ? '**Gracze Online:**' : '\u200b', value: chunk, inline: false });
-        } else {
-            embed.addFields({ name: '**Gracze Online:**', value: 'Brak graczy online.', inline: false });
-        }
-
-        embed.addFields({ name: '\u200b', value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour:'2-digit', minute:'2-digit', second:'2-digit', timeZone:'Europe/Warsaw', hour12:false })}`, inline: false });
-
         await statusMessage.edit({ embeds: [embed], content: '' });
-    } catch (e) {
-        console.error('Błąd:', e.message);
+        console.log('✅ Status updated.');
+    } catch (error) {
+        console.error('Error querying server:', error.message);
         const errorEmbed = new EmbedBuilder()
-            .setTitle('Status Serwera Counter-Strike 1.6')
+            .setTitle('Status Serwera CS 1.6')
             .setColor(0xFF0000)
-            .setDescription(`🔴 **Status:** Offline\n🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n
-_Błąd: ${e.message}_`)
-            .addFields({ name: '\u200b', value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit',second:'2-digit',timeZone:'Europe/Warsaw',hour12:false})}`, inline: false });
+            .setDescription(
+                `🔴 **Status:** Offline lub brak odpowiedzi\n` +
+                `🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n
+` +
+                `_Błąd: ${error.message}_`
+            )
+            .addFields({ name: '\u200b', value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Europe/Warsaw'})}` });
         await statusMessage.edit({ embeds: [errorEmbed], content: '' });
     }
 }
 
 client.once('ready', async () => {
-    console.log(`Bot zalogowany jako ${client.user.tag}`);
+    console.log(`Logged in as ${client.user.tag}`);
     if (!TOKEN || !SERVER_IP || isNaN(SERVER_PORT) || !STATUS_CHANNEL_ID) process.exit(1);
 
-    // Prosty HTTP do hostingu
-    const HOST_PORT = process.env.PORT || 3000;
-    http.createServer((req, res) => { res.writeHead(200); res.end('OK'); }).listen(HOST_PORT);
+    // Lekki serwer HTTP do hostingu
+    http.createServer((req, res) => { res.writeHead(200); res.end('OK'); }).listen(process.env.PORT || 3000);
 
     const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
-    if (!channel || !(channel instanceof TextChannel)) return;
+    if (!channel || !(channel instanceof TextChannel)) return console.error('Invalid channel');
 
     if (PREVIOUS_STATUS_MESSAGE_ID) {
         try { statusMessage = await channel.messages.fetch(PREVIOUS_STATUS_MESSAGE_ID); }
@@ -121,4 +112,3 @@ client.once('ready', async () => {
 });
 
 client.login(TOKEN);
-
