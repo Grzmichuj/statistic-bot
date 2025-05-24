@@ -73,7 +73,7 @@ async function updateServerStatusMessage() {
                 let playerStats = [];
 
                 if (p.score !== undefined) {
-                    playerStats.push(`K: ${p.score}`);
+                    playerStats.push(`Fragi: ${p.score}`);
                 }
 
                 if (p.time !== undefined) {
