@@ -39,7 +39,8 @@ async function updateServerStatusMessage() {
             type: 'cs16',
             host: SERVER_IP,
             port: SERVER_PORT,
-            timeout: 15000 // Czas oczekiwania na odpowiedź serwera (5 sekund)
+            timeout: 20000, // Zwiększony czas oczekiwania na odpowiedź serwera - 20s
+            debug: true // Dodanie flagi debugowania dla Gamedig
         });
 
         let playerListContent = '';
@@ -49,10 +50,10 @@ async function updateServerStatusMessage() {
             .setTitle('ZOMBIE+EXP 100 LVL by MCk199')
             .setColor(0x0099FF) // Kolor niebieski dla statusu online
             .setDescription(
-                `⭐ **Nazwa:** ${serverInfo.name}\n` +
-                `🗺️ **Mapa:** ${serverInfo.map}\n` +
-                `👥 **Gracze:** ${serverInfo.players.length}/${serverInfo.maxplayers}\n` +
-                `🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n`
+                ⭐ **Nazwa:** ${serverInfo.name}\n +
+                🗺️ **Mapa:** ${serverInfo.map}\n +
+                👥 **Gracze:** ${serverInfo.players.length}/${serverInfo.maxplayers}\n +
+                🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n
             );
 
         // LOGIKA TWORZENIA LISTY GRACZY
@@ -72,20 +73,17 @@ async function updateServerStatusMessage() {
                 let playerStats = [];
 
                 if (p.score !== undefined) {
-                    playerStats.push(`Fragi: ${p.score}`);
+                    playerStats.push(Fragi: ${p.score});
                 }
 
-                // <<< ZMIENIONA LOGIKA DLA CZASU GRACZA >>>
                 if (p.time !== undefined) {
                     const totalSeconds = Math.floor(p.time);
 
                     let timeString;
 
                     if (totalSeconds < 60) {
-                        // Jeśli poniżej minuty, wyświetl tylko sekundy
-                        timeString = `${totalSeconds}s`;
+                        timeString = ${totalSeconds}s;
                     } else {
-                        // Oblicz godziny, minuty i sekundy
                         const hours = Math.floor(totalSeconds / 3600);
                         const minutes = Math.floor((totalSeconds % 3600) / 60);
                         const seconds = totalSeconds % 60;
@@ -93,78 +91,80 @@ async function updateServerStatusMessage() {
                         let parts = [];
 
                         if (hours > 0) {
-                            parts.push(`${hours}h`);
+                            parts.push(${hours}h);
                         }
                         
-                        // Wyświetl minuty, jeśli są godziny lub jeśli minuty są > 0
                         if (minutes > 0 || hours > 0) {
-                            parts.push(`${minutes}m`);
+                            parts.push(${minutes}m);
                         }
 
-                        // Wyświetl sekundy, jeśli są > 0, LUB jeśli są godziny/minuty i sekundy = 0
                         if (seconds > 0 || (hours > 0 || minutes > 0)) {
-                            parts.push(`${seconds}s`);
+                            parts.push(${seconds}s);
                         }
                         
                         timeString = parts.join(' ');
                     }
-                    playerStats.push(`Czas: ${timeString}`);
+                    playerStats.push(Czas: ${timeString});
                 }
-                // <<< KONIEC ZMIANY >>>
 
-                // Formatowanie: Nick bez pogrubienia, statystyki w nawiasie pogrubione
                 if (playerStats.length > 0) {
-                    playerListContent += `• ${playerName} **(${playerStats.join(' | ')})**\n`;
+                    playerListContent += • ${playerName} **(${playerStats.join(' | ')})**\n;
                 } else {
-                    playerListContent += `• ${playerName}\n`;
+                    playerListContent += • ${playerName}\n;
                 }
             });
 
             if (serverInfo.players.length > maxPlayersToShow) {
-                playerListContent += `\n(+${serverInfo.players.length - maxPlayersToShow} więcej...)\n`;
+                playerListContent += \n(+${serverInfo.players.length - maxPlayersToShow} więcej...)\n;
             }
 
-            // Dodajemy pole dla listy graczy, nagłówek "Gracze online:" pogrubiony
             embed.addFields(
-                { name: '**Gracze Online:**', value: playerListContent, inline: false }
+                { name: '*Gracze Online:*', value: playerListContent, inline: false }
             );
 
         } else {
-            // Jeśli brak graczy, również dodajemy pole, nagłówek "Gracze online:" pogrubiony
             embed.addFields(
-                { name: '**Gracze Online:**', value: 'Brak graczy online.', inline: false }
+                { name: '*Gracze Online:*', value: 'Brak graczy online.', inline: false }
             );
         }
 
-        // Ostatnia aktualizacja jako nowe pole, pogrubiona
         embed.addFields(
             {
-                name: '\u200b', // Pusta nazwa pola dla lepszego wyglądu
-                value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`,
+                name: '\u200b',
+                value: **Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })},
                 inline: false
             }
         );
 
-
-        // Wysyłamy / edytujemy wiadomość, używając obiektu embed
         await statusMessage.edit({ embeds: [embed], content: '' });
         console.log('✅ Status serwera w wiadomości zaktualizowany pomyślnie.');
 
     } catch (error) {
         console.error('❌ Wystąpił błąd podczas pobierania informacji o serwerze CS 1.6:', error.message);
+        // Dodaj więcej szczegółów z obiektu błędu
+        if (error.errors && Array.isArray(error.errors)) {
+error.errors.forEach((err, index) => {
+                console.error(  Błąd ${index + 1}: Typ - ${err.type}, Wiadomość - ${err.message});
+                if (err.stack) {
+                    console.error(  Stos: ${err.stack});
+                }
+            });
+        } else if (error.stack) {
+            console.error(  Stos: ${error.stack});
+        }
         // Tworzymy embed dla statusu offline/błędu
         const errorEmbed = new EmbedBuilder()
             .setTitle('Status Serwera Counter-Strike 1.6')
             .setColor(0xFF0000) // Kolor czerwony dla statusu offline
             .setDescription(
-                `🔴 **Status:** Offline lub brak odpowiedzi\n` +
-                `🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\``
+                🔴 **Status:** Offline lub brak odpowiedzi\n +
+                🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n\n +
+                _Błąd: ${error.message}_ // Wyświetlaj komunikat błędu w embedzie
             )
-            // Ostatnia aktualizacja jako nowe pole, pogrubiona
             .addFields(
                 {
-                    name: '\u200b', // Pusta nazwa pola
-                    value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`,
+                    name: '\u200b',
+                    value: **Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })},
                     inline: false
                 }
             );
