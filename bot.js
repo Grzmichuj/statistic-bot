@@ -73,7 +73,7 @@ async function updateServerStatusMessage() {
                 let playerStats = [];
 
                 if (p.score !== undefined) {
-                    playerStats.push(`Fragi: ${p.score}`); // Tutaj były brakujące backticki
+                    playerStats.push(`K: ${p.score}`); // Tutaj były brakujące backticki
                 }
 
                 if (p.time !== undefined) {
