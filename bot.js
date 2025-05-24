@@ -50,10 +50,10 @@ async function updateServerStatusMessage() {
             .setTitle('ZOMBIE+EXP 100 LVL by MCk199')
             .setColor(0x0099FF) // Kolor niebieski dla statusu online
             .setDescription(
-                ⭐ **Nazwa:** ${serverInfo.name}\n +
-                🗺️ **Mapa:** ${serverInfo.map}\n +
-                👥 **Gracze:** ${serverInfo.players.length}/${serverInfo.maxplayers}\n +
-                🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n
+                `⭐ **Nazwa:** ${serverInfo.name}\n` +
+                `🗺️ **Mapa:** ${serverInfo.map}\n` +
+                `👥 **Gracze:** ${serverInfo.players.length}/${serverInfo.maxplayers}\n` +
+                `🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n`
             );
 
         // LOGIKA TWORZENIA LISTY GRACZY
@@ -73,7 +73,7 @@ async function updateServerStatusMessage() {
                 let playerStats = [];
 
                 if (p.score !== undefined) {
-                    playerStats.push(Fragi: ${p.score});
+                    playerStats.push(`Fragi: ${p.score}`); // Tutaj były brakujące backticki
                 }
 
                 if (p.time !== undefined) {
@@ -82,7 +82,7 @@ async function updateServerStatusMessage() {
                     let timeString;
 
                     if (totalSeconds < 60) {
-                        timeString = ${totalSeconds}s;
+                        timeString = `${totalSeconds}s`; // Tutaj były brakujące backticki
                     } else {
                         const hours = Math.floor(totalSeconds / 3600);
                         const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -91,47 +91,47 @@ async function updateServerStatusMessage() {
                         let parts = [];
 
                         if (hours > 0) {
-                            parts.push(${hours}h);
+                            parts.push(`${hours}h`); // Tutaj były brakujące backticki
                         }
                         
                         if (minutes > 0 || hours > 0) {
-                            parts.push(${minutes}m);
+                            parts.push(`${minutes}m`); // Tutaj były brakujące backticki
                         }
 
                         if (seconds > 0 || (hours > 0 || minutes > 0)) {
-                            parts.push(${seconds}s);
+                            parts.push(`${seconds}s`); // Tutaj były brakujące backticki
                         }
                         
                         timeString = parts.join(' ');
                     }
-                    playerStats.push(Czas: ${timeString});
+                    playerStats.push(`Czas: ${timeString}`); // Tutaj były brakujące backticki
                 }
 
                 if (playerStats.length > 0) {
-                    playerListContent += • ${playerName} **(${playerStats.join(' | ')})**\n;
+                    playerListContent += `• ${playerName} **(${playerStats.join(' | ')})**\n`; // Tutaj były brakujące backticki
                 } else {
-                    playerListContent += • ${playerName}\n;
+                    playerListContent += `• ${playerName}\n`; // Tutaj były brakujące backticki
                 }
             });
 
             if (serverInfo.players.length > maxPlayersToShow) {
-                playerListContent += \n(+${serverInfo.players.length - maxPlayersToShow} więcej...)\n;
+                playerListContent += `\n(+${serverInfo.players.length - maxPlayersToShow} więcej...)\n`; // Tutaj były brakujące backticki
             }
 
             embed.addFields(
-                { name: '*Gracze Online:*', value: playerListContent, inline: false }
+                { name: '**Gracze Online:**', value: playerListContent, inline: false } // Zmieniłem * na ** dla pogrubienia
             );
 
         } else {
             embed.addFields(
-                { name: '*Gracze Online:*', value: 'Brak graczy online.', inline: false }
+                { name: '**Gracze Online:**', value: 'Brak graczy online.', inline: false } // Zmieniłem * na ** dla pogrubienia
             );
         }
 
         embed.addFields(
             {
                 name: '\u200b',
-                value: **Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })},
+                value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`, // Tutaj były brakujące backticki
                 inline: false
             }
         );
@@ -143,28 +143,28 @@ async function updateServerStatusMessage() {
         console.error('❌ Wystąpił błąd podczas pobierania informacji o serwerze CS 1.6:', error.message);
         // Dodaj więcej szczegółów z obiektu błędu
         if (error.errors && Array.isArray(error.errors)) {
-error.errors.forEach((err, index) => {
-                console.error(  Błąd ${index + 1}: Typ - ${err.type}, Wiadomość - ${err.message});
+            error.errors.forEach((err, index) => {
+                console.error(`  Błąd ${index + 1}: Typ - ${err.type}, Wiadomość - ${err.message}`); // Tutaj były brakujące backticki
                 if (err.stack) {
-                    console.error(  Stos: ${err.stack});
+                    console.error(`  Stos: ${err.stack}`); // Tutaj były brakujące backticki
                 }
             });
         } else if (error.stack) {
-            console.error(  Stos: ${error.stack});
+            console.error(`  Stos: ${error.stack}`); // Tutaj były brakujące backticki
         }
         // Tworzymy embed dla statusu offline/błędu
         const errorEmbed = new EmbedBuilder()
             .setTitle('Status Serwera Counter-Strike 1.6')
             .setColor(0xFF0000) // Kolor czerwony dla statusu offline
             .setDescription(
-                🔴 **Status:** Offline lub brak odpowiedzi\n +
-                🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n\n +
-                _Błąd: ${error.message}_ // Wyświetlaj komunikat błędu w embedzie
+                `🔴 **Status:** Offline lub brak odpowiedzi\n` + // Tutaj były brakujące backticki i operator +
+                `🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n\n` + // Tutaj były brakujące backticki i operator +
+                `_Błąd: ${error.message}_` // Tutaj były brakujące backticki
             )
             .addFields(
                 {
                     name: '\u200b',
-                    value: **Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })},
+                    value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false, timeZone: 'Europe/Warsaw' })}`, // Tutaj były brakujące backticki
                     inline: false
                 }
             );
