@@ -23,6 +23,12 @@ const PREVIOUS_STATUS_MESSAGE_ID = process.env.PREVIOUS_STATUS_MESSAGE_ID;
 
 let statusMessage = null;
 
+// Funkcja uciekania znaków Markdownowych
+function escapeDiscordMarkdown(text) {
+    // ucieka wszystkie znaki: \ ` * _ { } [ ] ( ) # + - . ! > ~ |
+    return text.replace(/([\\`*_{}\[\]()#+\-.!>~|])/g, '\\$1');
+}
+
 // Inicjalizacja klienta Discorda z ograniczonymi intents
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
@@ -35,7 +41,7 @@ async function updateServerStatusMessage() {
         return;
     }
     try {
-        // Pobranie danych z Gamedig (bez debugowania w produkcji)
+        // Pobranie danych z Gamedig
         const serverInfo = await Gamedig.query({
             type: 'cs16',
             host: SERVER_IP,
@@ -52,6 +58,7 @@ async function updateServerStatusMessage() {
                     return a.name.localeCompare(b.name);
                 })
                 .slice(0, 32);
+
             sorted.forEach(p => {
                 let stats = [];
                 if (p.score != null) stats.push(`Fragi: ${p.score}`);
@@ -59,8 +66,8 @@ async function updateServerStatusMessage() {
                     const s = Math.floor(p.time);
                     if (s < 60) stats.push(`${s}s`);
                     else {
-                        const h = Math.floor(s/3600);
-                        const m = Math.floor((s%3600)/60);
+                        const h = Math.floor(s / 3600);
+                        const m = Math.floor((s % 3600) / 60);
                         const sec = s % 60;
                         const parts = [];
                         if (h) parts.push(`${h}h`);
@@ -69,8 +76,10 @@ async function updateServerStatusMessage() {
                         stats.push(`Czas: ${parts.join(' ')}`);
                     }
                 }
-                playerListContent += `• ${p.name}${stats.length ? ` **(${stats.join(' | ')})**` : ''}\n`;
+                const safeName = escapeDiscordMarkdown(p.name);
+                playerListContent += `• ${safeName}${stats.length ? ` **(${stats.join(' | ')})**` : ''}\n`;
             });
+
             if (serverInfo.players.length > 32) {
                 const more = serverInfo.players.length - 32;
                 playerListContent += `...(+${more} więcej)\n`;
@@ -79,13 +88,17 @@ async function updateServerStatusMessage() {
             playerListContent = 'Brak graczy online.';
         }
 
-        // Tworzymy embed (całość w jednym polu description)
+        // Uciekanie nazwy i mapy
+        const safeServerName = escapeDiscordMarkdown(serverInfo.name || '—');
+        const safeMapName = escapeDiscordMarkdown(serverInfo.map || '—');
+
+        // Tworzymy embed
         const embed = new EmbedBuilder()
             .setTitle('ZOMBIE+EXP 100 LVL by MCk199')
             .setColor(0x0099FF)
             .setDescription(
-                `⭐ **Nazwa:** ${serverInfo.name}\n` +
-                `🗺️ **Mapa:** ${serverInfo.map}\n` +
+                `⭐ **Nazwa:** ${safeServerName}\n` +
+                `🗺️ **Mapa:** ${safeMapName}\n` +
                 `👥 **Gracze:** ${serverInfo.players.length}/${serverInfo.maxplayers}\n` +
                 `🔗 **IP:** ${SERVER_IP}:${SERVER_PORT}\n\n` +
                 `**Gracze Online:**\n${playerListContent}`
@@ -112,9 +125,18 @@ async function updateServerStatusMessage() {
             .setDescription(
                 `🔴 **Status:** Offline lub brak odpowiedzi\n` +
                 `🔗 **Adres:** \`${SERVER_IP}:${SERVER_PORT}\`\n\n` +
-                `_Błąd: ${error.message}_`
+                `_Błąd: ${escapeDiscordMarkdown(error.message)}_`
             )
-            .addFields({ name: '\u200b', value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false,timeZone:'Europe/Warsaw'})}` });
+            .addFields({
+                name: '\u200b',
+                value: `**Ostatnia Aktualizacja:** ${new Date().toLocaleTimeString('pl-PL', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false,
+                    timeZone: 'Europe/Warsaw'
+                })}`
+            });
         await statusMessage.edit({ embeds: [errorEmbed], content: '' });
     }
 }
@@ -122,13 +144,14 @@ async function updateServerStatusMessage() {
 // Ready
 client.once('ready', async () => {
     console.log(`✅ Bot logged in as ${client.user.tag}`);
+
     // Walidacja kluczowych zmiennych
     if (!TOKEN || !SERVER_IP || isNaN(SERVER_PORT) || !STATUS_CHANNEL_ID) {
         console.error('❌ Missing or invalid environment variables.');
         process.exit(1);
     }
 
-    // Opcjonalnie: prosty HTTP do keep-alive (usuń jeśli niepotrzebny)
+    // Prostki HTTP do keep-alive (usuń jeśli niepotrzebny)
     http.createServer((req, res) => res.end('OK')).listen(process.env.PORT || 3000);
 
     const channel = await client.channels.fetch(STATUS_CHANNEL_ID);
@@ -142,10 +165,14 @@ client.once('ready', async () => {
         try {
             statusMessage = await channel.messages.fetch(PREVIOUS_STATUS_MESSAGE_ID);
         } catch {
-            statusMessage = await channel.send({ embeds: [ new EmbedBuilder().setDescription('Inicjuję status...').setColor(0xFFA500) ] });
+            statusMessage = await channel.send({
+                embeds: [ new EmbedBuilder().setDescription('Inicjuję status...').setColor(0xFFA500) ]
+            });
         }
     } else {
-        statusMessage = await channel.send({ embeds: [ new EmbedBuilder().setDescription('Inicjuję status...').setColor(0xFFA500) ] });
+        statusMessage = await channel.send({
+            embeds: [ new EmbedBuilder().setDescription('Inicjuję status...').setColor(0xFFA500) ]
+        });
     }
 
     // Pierwsza aktualizacja i interwał
