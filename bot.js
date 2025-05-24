@@ -109,14 +109,14 @@ async function updateServerStatusMessage() {
                 }
             });
 
-            // DZIELENIE NA KILKA PÓL, ALE WIDOCZNE JAKO JEDEN BLOK
+            // DZIELENIE NA KILKA PÓL, ALE BEZ WIDOCZNEGO PODZIAŁU
             const MAX_FIELD_LENGTH = 1024;
             const lines = playerListContent.trim().split('\n');
             let chunk = '';
             let part = 1;
             for (const line of lines) {
                 if ((chunk + '\n' + line).length > MAX_FIELD_LENGTH) {
-                    // Dla pierwszej części dajemy widoczny nagłówek
+                    // Pierwsze pole z nagłówkiem, kolejne tylko wartości
                     if (part === 1) {
                         embed.addFields({ name: 'Gracze Online', value: chunk, inline: false });
                     } else {
@@ -230,3 +230,4 @@ client.once('ready', async () => {
 
 // Logowanie bota do Discorda
 client.login(TOKEN);
+
