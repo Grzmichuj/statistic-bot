@@ -33,7 +33,7 @@ async function updateServerStatusMessage() {
             }).slice(0, 32);
             sorted.forEach(p => {
                 let stats = [];
-                if (p.score != null) stats.push(`K: ${p.score}`);
+                if (p.score != null) stats.push(`Fragi: ${p.score}`);
                 if (p.time != null) {
                     const s = Math.floor(p.time);
                     if (s < 60) stats.push(`${s}s`);
